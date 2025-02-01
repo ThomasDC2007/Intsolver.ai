@@ -33,10 +33,18 @@
         input[type="text"] {
             width: 100%;
             padding: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             border: 2px solid #00796b;
             border-radius: 5px;
             font-size: 16px;
+        }
+        .bounds {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .bounds input {
+            flex: 1;
         }
         button {
             background-color: #00796b;
@@ -46,6 +54,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
+            width: 100%;
         }
         button:hover {
             background-color: #004d40;
@@ -76,6 +85,10 @@
     <div class="container">
         <h1>Integral Solver</h1>
         <input type="text" id="integralInput" placeholder="Enter your integral (e.g., 3x + cos(x))" oninput="updatePreview()">
+        <div class="bounds">
+            <input type="text" id="lowerBound" placeholder="Lower bound (optional)">
+            <input type="text" id="upperBound" placeholder="Upper bound (optional)">
+        </div>
         <button onclick="solveIntegral()">Solve</button>
         <div class="preview" id="previewContainer"></div>
         <div class="steps" id="stepsContainer"></div>
@@ -84,6 +97,8 @@
     <script>
         function updatePreview() {
             const integral = document.getElementById("integralInput").value;
+            const lower = document.getElementById("lowerBound").value;
+            const upper = document.getElementById("upperBound").value;
             const previewContainer = document.getElementById("previewContainer");
 
             // Convert input to LaTeX format
@@ -97,12 +112,18 @@
                 .replace(/(\d+)([a-zA-Z])/g, "$1 \\cdot $2"); // 3x -> 3 \cdot x
 
             // Display the preview
-            previewContainer.innerHTML = `This will be calculated: \\( \\int ${latexIntegral} \\, dx \\)`;
+            if (lower && upper) {
+                previewContainer.innerHTML = `This will be calculated: \\( \\int_{${lower}}^{${upper}} ${latexIntegral} \\, dx \\)`;
+            } else {
+                previewContainer.innerHTML = `This will be calculated: \\( \\int ${latexIntegral} \\, dx \\)`;
+            }
             MathJax.typeset(); // Render MathJax
         }
 
         function solveIntegral() {
             const integral = document.getElementById("integralInput").value;
+            const lower = document.getElementById("lowerBound").value;
+            const upper = document.getElementById("upperBound").value;
             const stepsContainer = document.getElementById("stepsContainer");
             stepsContainer.innerHTML = ""; // Clear previous steps
 
@@ -114,7 +135,7 @@
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ integral: formattedIntegral }),
+                body: JSON.stringify({ integral: formattedIntegral, lower: lower, upper: upper }),
             })
             .then(response => response.json())
             .then(data => {

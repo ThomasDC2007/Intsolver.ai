@@ -17,15 +17,19 @@ def solve_integral(integral_expr, lower=None, upper=None):
     # Step 2: Choose the appropriate integration method
     if expr.is_polynomial():
         steps.append("Step 2: Using basic integral formulas.")
+        steps.append("Mini-lesson: Basic integrals are solved using the power rule: \\( \\int x^n \\, dx = \\frac{x^{n+1}}{n+1} + C \\) for \\( n \\neq -1 \\).")
         integral = sp.integrate(expr, x)
     elif expr.has(sp.sin, sp.cos):
         steps.append("Step 2: Using trigonometric integrals.")
+        steps.append("Mini-lesson: Trigonometric integrals involve integrating functions like \\( \\sin(x) \\) and \\( \\cos(x) \\). For example, \\( \\int \\sin(x) \\, dx = -\\cos(x) + C \\).")
         integral = sp.integrate(expr, x)
     elif expr.is_rational_function():
         steps.append("Step 2: Using partial fraction decomposition.")
+        steps.append("Mini-lesson: Partial fraction decomposition breaks a rational function into simpler fractions. For example, \\( \\frac{1}{(x+1)(x+2)} = \\frac{A}{x+1} + \\frac{B}{x+2} \\).")
         integral = sp.integrate(expr, x)
     else:
         steps.append("Step 2: Using general integration techniques.")
+        steps.append("Mini-lesson: General techniques include substitution, integration by parts, and advanced methods like the residue theorem for complex integrals.")
         integral = sp.integrate(expr, x)
 
     # Step 3: Compute the integral
