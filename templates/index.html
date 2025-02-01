@@ -1,1 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integral Solver</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e0f7fa;
+            color: #00695c;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+        h1 {
+            color: #00796b;
+            text-align: center;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #00796b;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .bounds {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .bounds input {
+            flex: 1;
+        }
+        button {
+            background-color: #00796b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #004d40;
+        }
+        .preview {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #b2dfdb;
+            border-radius: 5px;
+            font-size: 18px;
+        }
+        .steps {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #b2dfdb;
+            border-radius: 5px;
+        }
+        .step {
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        .error {
+            color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Integral Solver</h1>
+        <input type="text" id="integralInput" placeholder="Enter your integral (e.g., 3x + cos(x))" oninput="updatePreview()">
+        <div class="bounds">
+            <input type="text" id="lowerBound" placeholder="Lower bound (optional)">
+            <input type="text" id="upperBound" placeholder="Upper bound (optional)">
+        </div>
+        <button onclick="solveIntegral()">Solve</button>
+        <div class="preview" id="previewContainer"></div>
+        <div class="steps" id="stepsContainer"></div>
+    </div>
 
+    <script>
+        function updatePreview() {
+            const integral = document.getElementById("integralInput").value;
+            const lower = document.getElementById("lowerBound").value;
+            const upper = document.getElementById("upperBound").value;
+            const previewContainer = document.getElementById("previewContainer");
+
+            // Convert input to LaTeX format
+            const latexIntegral = integral
+                .replace(/sqrt\(([^)]+)\)/g, "\\sqrt{$1}") // sqrt(x) -> \sqrt{x}
+                .replace(/\^/g, "^") // Handle exponents
+                .replace(/pi/g, "\\pi") // pi -> \pi
+                .replace(/sin\(([^)]+)\)/g, "\\sin($1)") // sin(x) -> \sin(x)
+                .replace(/cos\(([^)]+)\)/g, "\\cos($1)") // cos(x) -> \cos(x)
+                .replace(/exp\(([^)]+)\)/g, "e^{$1}") // exp(x) -> e^{x}
+                .replace(/(\d+)([a-zA-Z])/g, "$1 \\cdot $2"); // 3x -> 3 \cdot x
+
+            // Display the preview
+            if (lower && upper) {
+                previewContainer.innerHTML = `This will be calculated: \\( \\int_{${lower}}^{${upper}} ${latexIntegral} \\, dx \\)`;
+            } else {
+                previewContainer.innerHTML = `This will be calculated: \\( \\int ${latexIntegral} \\, dx \\)`;
+            }
+            MathJax.typeset(); // Render MathJax
+        }
+
+        function solveIntegral() {
+            const integral = document.getElementById("integralInput").value;
+            const lower = document.getElementById("lowerBound").value;
+            const upper = document.getElementById("upperBound").value;
+            const stepsContainer = document.getElementById("stepsContainer");
+            stepsContainer.innerHTML = ""; // Clear previous steps
+
+            // Replace "3x" with "3*x" for SymPy compatibility
+            const formattedIntegral = integral.replace(/(\d+)([a-zA-Z])/g, "$1*$2");
+
+            fetch("/solve", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ integral: formattedIntegral, lower: lower, upper: upper }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    data.steps.forEach(step => {
+                        const stepDiv = document.createElement("div");
+                        stepDiv.className = "step";
+                        stepDiv.innerHTML = step; // Use innerHTML to render MathJax
+                        stepsContainer.appendChild(stepDiv);
+                    });
+                    // Render MathJax after adding steps
+                    MathJax.typeset();
+                } else {
+                    const errorDiv = document.createElement("div");
+                    errorDiv.className = "error";
+                    errorDiv.textContent = "Error: " + data.error;
+                    stepsContainer.appendChild(errorDiv);
+                }
+            })
+            .catch(error => {
+                const errorDiv = document.createElement("div");
+                errorDiv.className = "error";
+                errorDiv.textContent = "An error occurred. Please try again.";
+                stepsContainer.appendChild(errorDiv);
+            });
+        }
+    </script>
+</body>
+</html>
